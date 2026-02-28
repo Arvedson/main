@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { calculateHealthScore, getAIAdvice } from "@/lib/scoring";
+import { calculateHealthScore, getRealAIAdvice } from "@/lib/scoring";
 
 export async function saveVitals(data: any) {
   const session = await auth();
@@ -43,7 +43,7 @@ export async function saveVitals(data: any) {
     // 3. Calculate Health Score and AI Advice
     const profileData = { gender: patient.gender, birthDate: patient.birthDate };
     const scoreResult = calculateHealthScore(data, (patient.segment as any) || "GENERAL", profileData);
-    const adviceResult = getAIAdvice(scoreResult.score, scoreResult.status, (patient.segment as any) || "GENERAL", profileData);
+    const adviceResult = await getRealAIAdvice(data, scoreResult.score, scoreResult.status, (patient.segment as any) || "GENERAL", profileData);
 
     // 4. Save HealthScore record
     await prisma.healthScore.create({

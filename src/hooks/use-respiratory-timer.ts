@@ -1,20 +1,18 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export function useRespiratoryTimer(onChange: (bpm: number) => void) {
   const [breathStarts, setBreathStarts] = useState<number[]>([]);
+  const breathStartsRef = useRef<number[]>([]);
   const [isHolding, setIsHolding] = useState(false);
 
   const handleStartHold = useCallback(() => {
     const now = Date.now();
     setIsHolding(true);
     
-    let newStarts: number[] = [];
-    setBreathStarts((prev) => {
-      // Keep only last 4 breath starts within last 15 seconds
-      const validStarts = prev.filter(t => now - t < 15000);
-      newStarts = [...validStarts, now];
-      return newStarts;
-    });
+    const validStarts = breathStartsRef.current.filter(t => now - t < 15000);
+    const newStarts = [...validStarts, now];
+    breathStartsRef.current = newStarts;
+    setBreathStarts(newStarts);
 
     if (newStarts.length > 1) {
       let totalInterval = 0;
@@ -35,6 +33,7 @@ export function useRespiratoryTimer(onChange: (bpm: number) => void) {
   }, []);
 
   const reset = useCallback(() => {
+    breathStartsRef.current = [];
     setBreathStarts([]);
     setIsHolding(false);
   }, []);

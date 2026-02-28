@@ -50,6 +50,37 @@ export default function PatientDetailUI({ patient, insights = [] }: { patient: a
     }
   };
 
+  const renderAIAdvice = (adviceJson: string) => {
+    try {
+      const advices = JSON.parse(adviceJson);
+      if (!Array.isArray(advices)) return adviceJson;
+
+      return (
+        <div className="space-y-2 mt-2">
+          {advices.map((adv: any, idx: number) => (
+            <div key={adv.id || idx} className="p-3 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
+              <div className="mt-0.5">
+                {adv.type === "insight" ? <Lightbulb className="w-4 h-4 text-primary" /> : 
+                 adv.type === "prediction" ? <TrendingUp className="w-4 h-4 text-blue-500" /> : 
+                 <ShieldAlert className="w-4 h-4 text-orange-500" />}
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
+                  {adv.type}
+                </p>
+                <p className="text-xs text-secondary dark:text-white leading-relaxed">
+                  {adv.content}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } catch (e) {
+      return adviceJson;
+    }
+  };
+
   const latestVital = patient.vitals?.[0];
   const latestScore = patient.healthScores?.[0];
 
@@ -201,8 +232,9 @@ export default function PatientDetailUI({ patient, insights = [] }: { patient: a
                         </div>
                       </div>
                       {h.aiAdvice && (
-                        <div className="mt-2 p-3 bg-primary/5 rounded-xl text-xs text-muted-foreground">
-                          <span className="font-bold text-primary">{t("aiAdvice")}:</span> {h.aiAdvice}
+                        <div className="mt-2">
+                          <span className="font-bold text-primary text-xs">{t("aiAdvice")}:</span> 
+                          {renderAIAdvice(h.aiAdvice)}
                         </div>
                       )}
                       {h.trend && (
@@ -300,14 +332,35 @@ export default function PatientDetailUI({ patient, insights = [] }: { patient: a
                   )}
                   {patient.intake.initialVisual && (
                     <div className="p-4 bg-muted/20 rounded-xl">
-                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">{t("habitusExterior")}</p>
-                      <pre className="text-xs text-secondary dark:text-white whitespace-pre-wrap">{JSON.stringify(patient.intake.initialVisual, null, 2)}</pre>
+                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">{t("habitusExterior")}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {Object.entries(patient.intake.initialVisual)
+                          .filter(([key]) => ["gait", "color", "breathing"].includes(key))
+                          .map(([key, value]) => (
+                            <div key={key} className="flex items-center justify-between p-2 bg-background/50 rounded-lg border border-border/50">
+                              <span className="text-xs font-medium">{t(key as any)}</span>
+                              {value ? (
+                                <CheckCircle2 className="w-4 h-4 text-success" />
+                              ) : (
+                                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                              )}
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   )}
                   {patient.intake.immunizationRecord && (
                     <div className="p-4 bg-muted/20 rounded-xl">
-                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">{t("immunizations")}</p>
-                      <pre className="text-xs text-secondary dark:text-white whitespace-pre-wrap">{JSON.stringify(patient.intake.immunizationRecord, null, 2)}</pre>
+                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">{t("immunizations")}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(patient.intake.immunizationRecord).map(([key, value]) => (
+                          value ? (
+                            <span key={key} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-primary/10 text-primary border border-primary/20">
+                              <CheckCircle2 className="w-3 h-3" /> {key.replace("_", " ")}
+                            </span>
+                          ) : null
+                        ))}
+                      </div>
                     </div>
                   )}
                   <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>

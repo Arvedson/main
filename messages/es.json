@@ -141,6 +141,11 @@
     "habitusTitle": "Habitus Exterior",
     "habitusDesc": "Inspección visual inicial del paciente.",
     "clinicalModule": "Módulo Clínico",
+    "clinicalModule_alignment": "Alineación corporal adecuada",
+    "clinicalModule_consciousness": "Estado de conciencia",
+    "clinicalModule_color": "Coloración de piel normal",
+    "clinicalModule_breathing": "Respiración rítmica",
+    "clinicalModule_gait": "Marcha estable",
     "clinicalNote": "Nota Clínica",
     "clinicalNoteDesc": "Registra anomalías como palidez, cianosis, ictericia o dificultades motoras.",
     "alignment": "Alineación corporal adecuada",
@@ -341,6 +346,9 @@
     "heredityFamily": "Herencia / Familia",
     "habits": "Hábitos",
     "environment": "Entorno",
-    "notProvided": "No proporcionado"
+    "notProvided": "No proporcionado",
+    "gait": "Marcha estable",
+    "color": "Coloración de piel normal",
+    "breathing": "Respiración rítmica"
   }
 }

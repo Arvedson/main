@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Users, 
@@ -38,6 +38,11 @@ export default function DoctorDashboardUI({ userName, initialData }: { userName:
   const t = useTranslations("DoctorDashboard");
   const [inviteCode, setInviteCode] = useState(initialData?.inviteCode);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const metrics = initialData?.metrics || { totalPatients: 0, criticalPatients: 0, pendingReviews: 0 };
   const patients = initialData?.patients || [];
@@ -269,11 +274,11 @@ export default function DoctorDashboardUI({ userName, initialData }: { userName:
                         <td className="px-6 py-5 text-muted-foreground font-medium">
                            <div className="flex items-center gap-2">
                              <Clock className="w-4 h-4 opacity-50" />
-                             {format.dateTime(new Date(patient.lastUpdate), {
+                             {mounted ? format.dateTime(new Date(patient.lastUpdate), {
                                year: 'numeric',
                                month: '2-digit',
                                day: '2-digit'
-                             })}
+                             }) : "..."}
                            </div>
                         </td>
                         <td className="px-6 py-5 text-right">

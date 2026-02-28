@@ -1,19 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export function useTapTempo(onChange: (bpm: number) => void) {
   const [taps, setTaps] = useState<number[]>([]);
+  const tapsRef = useRef<number[]>([]);
 
   const handleTap = useCallback((e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     const now = Date.now();
     
-    let newTaps: number[] = [];
-    setTaps((prev) => {
-      // Keep only the last 5 taps within the last 5 seconds
-      const validTaps = prev.filter(t => now - t < 5000);
-      newTaps = [...validTaps, now];
-      return newTaps;
-    });
+    const validTaps = tapsRef.current.filter(t => now - t < 5000);
+    const newTaps = [...validTaps, now];
+    tapsRef.current = newTaps;
+    setTaps(newTaps);
 
     if (newTaps.length > 1) {
       let totalInterval = 0;

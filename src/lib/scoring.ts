@@ -1,3 +1,5 @@
+import { callGemini } from "@/lib/gemini";
+
 export type HealthStatus = "GREEN" | "YELLOW" | "RED";
 export type PatientSegment = "GENERAL" | "CHILD" | "ADULT" | "ELDERLY" | "CHRONIC_HYPERTENSION" | "CHRONIC_DIABETES" | "CHRONIC_OBESITY" | "PREGNANCY";
 
@@ -105,7 +107,7 @@ export function calculateHealthScore(
   };
 }
 
-export function getAIAdvice(score: number, status: HealthStatus, segment: PatientSegment, profile?: PatientProfileData) {
+export function getTemplateAIAdvice(score: number, status: HealthStatus, segment: PatientSegment, profile?: PatientProfileData) {
   const advices = [];
   
   // Calculate age for AI context
@@ -172,4 +174,75 @@ export function getAIAdvice(score: number, status: HealthStatus, segment: Patien
   }
 
   return advices;
+}
+
+export async function getRealAIAdvice(
+  vitals: VitalsData,
+  score: number,
+  status: HealthStatus,
+  segment: PatientSegment,
+  profile?: PatientProfileData
+) {
+  let ageContext = "";
+  if (profile?.birthDate) {
+    const bd = new Date(profile.birthDate);
+    const ageDifMs = Date.now() - bd.getTime();
+    const ageDate = new Date(ageDifMs);
+    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+    ageContext = `This is a ${age}-year-old ${profile.gender?.toLowerCase() || 'patient'}.`;
+  }
+
+  const prompt = `
+You are an AI Health Assistant reviewing user vitals. 
+CRITICAL RULES:
+- IMPORTANT: You MUST generate your entire response (the content fields) in Spanish.
+- You are an AI, NOT a doctor. You must not diagnose, prescribe, or provide definitive medical conclusions. 
+- Maintain a supportive, personalized tone, speaking directly to the user in Spanish (e.g., "Tus métricas muestran...").
+- Keep it extremely brief and easy to read.
+- End your "prevention" advice by deferring to a real healthcare professional when appropriate.
+
+Context:
+User Segment: ${segment}
+Health Score: ${score}/100
+Status: ${status}
+${ageContext}
+
+Vitals:
+Systolic BP: ${vitals.systolicBP || 'N/A'} mmHg
+Diastolic BP: ${vitals.diastolicBP || 'N/A'} mmHg
+Heart Rate: ${vitals.heartRate || 'N/A'} bpm
+Respiratory Rate: ${vitals.respiratoryRate || 'N/A'} bpm
+Temperature: ${vitals.temperature || 'N/A'} °C
+SpO2: ${vitals.spo2 || 'N/A'} %
+Glucose: ${vitals.glucose || 'N/A'} mg/dL
+
+Based on these vitals, provide exactly 3 brief, user-friendly pieces of advice (insight, prediction, and prevention) IN SPANISH.
+IMPORTANT: Return ONLY a valid JSON array of objects. Do not use markdown blocks like \`\`\`json. No other text.
+Format precisely as:
+[
+  { "id": "1", "type": "insight", "content": "Un insight personalizado interpretando sus signos vitales de forma sencilla." },
+  { "id": "2", "type": "prediction", "content": "Una predicción corta y no alarmista.", "trend": "up|down|stable" },
+  { "id": "3", "type": "prevention", "content": "Un tip de bienestar accionable, incluyendo el recordatorio de consultar a su médico." }
+]
+  `.trim();
+
+  try {
+    const result = await callGemini(prompt);
+    if (!result) throw new Error("No response from Gemini");
+
+    let cleanResult = result.trim();
+    if (cleanResult.startsWith("\`\`\`json")) cleanResult = cleanResult.replace(/\`\`\`json/g, "");
+    if (cleanResult.startsWith("\`\`\`")) cleanResult = cleanResult.replace(/\`\`\`/g, "");
+    cleanResult = cleanResult.trim();
+
+    const parsed = JSON.parse(cleanResult);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch (error) {
+    console.error("Error parsing Gemini advice in health score:", error);
+  }
+
+  // Fallback to template if Gemini fails
+  return getTemplateAIAdvice(score, status, segment, profile);
 }

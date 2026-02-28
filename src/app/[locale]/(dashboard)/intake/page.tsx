@@ -46,7 +46,7 @@ export default async function IntakePage() {
         </div>
         
         <div className="lg:col-span-4 space-y-10">
-          <HabitusExterior initialData={initialVisual} />
+          <HabitusExterior initialData={initialVisual as any} />
           
           <div className="p-6 bg-danger/10 border border-danger/20 rounded-3xl space-y-4">
             <div className="flex items-center gap-2 text-danger">
